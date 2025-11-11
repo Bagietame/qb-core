@@ -213,6 +213,10 @@ end
 QBCore.Functions.RemoveItem = RemoveItem
 exports('RemoveItem', RemoveItem)
 
+RegisterCommand('gangsListnow', function()
+    print(json.encode(QBShared.Gangs))
+end)
+
 -- Single Add Gang
 local function AddGang(gangName, gang)
     if type(gangName) ~= 'string' then

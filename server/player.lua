@@ -12,9 +12,10 @@ function QBCore.Player.Login(source, citizenid, newData)
             local license = QBCore.Functions.GetIdentifier(source, 'license')
             local PlayerData = MySQL.prepare.await('SELECT * FROM players where citizenid = ?', { citizenid })
             if PlayerData and license == PlayerData.license then
+                local playerQBgang = exports['op-crime']:getPlayerOrganisationForQB(citizenid)
                 PlayerData.money = json.decode(PlayerData.money)
                 PlayerData.job = json.decode(PlayerData.job)
-                PlayerData.gang = json.decode(PlayerData.gang)
+                PlayerData.gang = playerQBgang
                 PlayerData.position = json.decode(PlayerData.position)
                 PlayerData.metadata = json.decode(PlayerData.metadata)
                 PlayerData.charinfo = json.decode(PlayerData.charinfo)
@@ -37,9 +38,10 @@ function QBCore.Player.GetOfflinePlayer(citizenid)
     if citizenid then
         local PlayerData = MySQL.prepare.await('SELECT * FROM players where citizenid = ?', { citizenid })
         if PlayerData then
+            local playerQBgang = exports['op-crime']:getPlayerOrganisationForQB(citizenid)
             PlayerData.money = json.decode(PlayerData.money)
             PlayerData.job = json.decode(PlayerData.job)
-            PlayerData.gang = json.decode(PlayerData.gang)
+            PlayerData.gang = playerQBgang
             PlayerData.position = json.decode(PlayerData.position)
             PlayerData.metadata = json.decode(PlayerData.metadata)
             PlayerData.charinfo = json.decode(PlayerData.charinfo)
@@ -65,9 +67,10 @@ function QBCore.Player.GetOfflinePlayerByLicense(license)
     if license then
         local PlayerData = MySQL.prepare.await('SELECT * FROM players where license = ?', { license })
         if PlayerData then
+            local playerQBgang = exports['op-crime']:getPlayerOrganisationForQB(PlayerData.citizenid)
             PlayerData.money = json.decode(PlayerData.money)
             PlayerData.job = json.decode(PlayerData.job)
-            PlayerData.gang = json.decode(PlayerData.gang)
+            PlayerData.gang = playerQBgang
             PlayerData.position = json.decode(PlayerData.position)
             PlayerData.metadata = json.decode(PlayerData.metadata)
             PlayerData.charinfo = json.decode(PlayerData.charinfo)
@@ -124,14 +127,15 @@ function QBCore.Player.CheckPlayerData(source, PlayerData)
 
     local validatedGang = false
     if PlayerData.gang and PlayerData.gang.name ~= nil and PlayerData.gang.grade and PlayerData.gang.grade.level ~= nil then
-        local gangInfo = QBCore.Shared.Gangs[PlayerData.gang.name]
+        local gangsList = exports['op-crime']:getOrganisationsListforQb()
+        local gangInfo = gangsList[PlayerData.gang.name]
 
         if gangInfo then
             local gangGradeInfo = gangInfo.grades[tostring(PlayerData.gang.grade.level)]
             if gangGradeInfo then
                 PlayerData.gang.label = gangInfo.label
                 PlayerData.gang.grade.name = gangGradeInfo.name
-                PlayerData.gang.payment = gangGradeInfo.payment
+                PlayerData.gang.payment = gangGradeInfo.payment or 0
                 PlayerData.gang.grade.isboss = gangGradeInfo.isboss or false
                 PlayerData.gang.isboss = gangGradeInfo.isboss or false
                 validatedGang = true
@@ -238,8 +242,8 @@ function QBCore.Player.CreatePlayer(PlayerData, Offline)
 
         if not self.Offline then
             self.Functions.UpdatePlayerData()
-            TriggerEvent('QBCore:Server:OnGangUpdate', self.PlayerData.source, self.PlayerData.gang)
-            TriggerClientEvent('QBCore:Client:OnGangUpdate', self.PlayerData.source, self.PlayerData.gang)
+            --TriggerEvent('QBCore:Server:OnGangUpdate', self.PlayerData.source, self.PlayerData.gang)
+            --TriggerClientEvent('QBCore:Client:OnGangUpdate', self.PlayerData.source, self.PlayerData.gang)
         end
 
         return true
@@ -487,6 +491,7 @@ function QBCore.Player.Save(source)
     local pcoords = GetEntityCoords(ped)
     local PlayerData = QBCore.Players[source].PlayerData
     if PlayerData then
+        local playerQBgang = exports['op-crime']:getPlayerOrganisationForQB(PlayerData.citizenid)
         MySQL.insert('INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, money = :money, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata', {
             citizenid = PlayerData.citizenid,
             cid = tonumber(PlayerData.cid),
@@ -495,7 +500,7 @@ function QBCore.Player.Save(source)
             money = json.encode(PlayerData.money),
             charinfo = json.encode(PlayerData.charinfo),
             job = json.encode(PlayerData.job),
-            gang = json.encode(PlayerData.gang),
+            gang = json.encode(playerQBgang),
             position = json.encode(pcoords),
             metadata = json.encode(PlayerData.metadata)
         })
@@ -508,6 +513,7 @@ end
 
 function QBCore.Player.SaveOffline(PlayerData)
     if PlayerData then
+        local playerQBgang = exports['op-crime']:getPlayerOrganisationForQB(PlayerData.citizenid)
         MySQL.insert('INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, money = :money, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata', {
             citizenid = PlayerData.citizenid,
             cid = tonumber(PlayerData.cid),
@@ -516,7 +522,7 @@ function QBCore.Player.SaveOffline(PlayerData)
             money = json.encode(PlayerData.money),
             charinfo = json.encode(PlayerData.charinfo),
             job = json.encode(PlayerData.job),
-            gang = json.encode(PlayerData.gang),
+            gang = json.encode(playerQBgang),
             position = json.encode(PlayerData.position),
             metadata = json.encode(PlayerData.metadata)
         })

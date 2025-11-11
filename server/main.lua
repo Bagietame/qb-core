@@ -44,6 +44,7 @@ end
 exports('GetSharedJobs', GetSharedJobs)
 
 local function GetSharedGangs()
-    return QBShared.Gangs
+    local gangsList = exports['op-crime']:getOrganisationsListforQb()
+    return gangsList
 end
 exports('GetSharedGangs', GetSharedGangs)
